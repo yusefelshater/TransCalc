@@ -1,6 +1,8 @@
 """
 Command Line Interface for Pavement Performance Model
 """
+# واجهة سطر أوامر لتشغيل النموذج وتوليد النتائج إلى stdout.
+# Arabic/English: يوفر parser للمدخلات الإلزامية وخيار overhead، ثم يستدعي run_model ويطبع النتائج.
 import argparse
 import model
 from model import run_model
@@ -10,7 +12,8 @@ from config import *
 
 def main():
     parser = argparse.ArgumentParser(description='Pavement Performance Model')
-    
+    # تعريف المعاملات الإلزامية مع الوحدات:
+    # L[km], W[m], h[m], rho_m[ton/m³], Pb/Pp/Pr[proportion], T[°C], A[million ESALs/year]
     # Required inputs
     parser.add_argument('--L', type=float, required=True, help='Road length in km')
     parser.add_argument('--W', type=float, required=True, help='Road width in m')
@@ -26,10 +29,12 @@ def main():
     parser.add_argument('--c_pl', type=float, required=True, help='Plastic cost per ton')
     parser.add_argument('--c_rub', type=float, required=True, help='Rubber cost per ton')
     parser.add_argument('--overhead', type=float, default=0.0, help='Overhead cost (default: 0)')
+    # ملاحظة: يمكن مستقبلاً إضافة خيارات لتحديد presets/coeffs من standards.json عبر مسار ملف.
     
     args = parser.parse_args()
     
     # Run the model
+    # استدعاء النموذج بالقيم المُدخلة من سطر الأوامر، بدون تغيير أي معاملات افتراضية أخرى.
     results = run_model(
         L=args.L, W=args.W, h=args.h, rho_m=args.rho_m, Pb=args.Pb,
         Pp=args.Pp, Pr=args.Pr, T=args.T, A=args.A,
@@ -38,6 +43,7 @@ def main():
     )
     
     # Print results
+    # طباعة النتائج على شكل مفتاح:قيمة. بعض القيم تكون dicts (مثل costs)، ستُطبع كما هي.
     print("\nResults:")
     for key, value in results.items():
         print(f"{key}: {value}")

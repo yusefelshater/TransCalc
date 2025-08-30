@@ -6,3 +6,5 @@ imageio-ffmpeg>=0.4.7
 customtkinter>=5.2.0
 matplotlib>=3.8.0
 mplcursors>=0.5.2
+numpy>=1.24.0
+imageio>=2.31.0

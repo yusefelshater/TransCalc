@@ -1,5 +1,9 @@
 from model import run_model
 
+# Smoke test / مثال تشغيل سريع:
+# - يشغّل النموذج بقيم افتراضية للتأكد من أن الأنابيب الحسابية تعمل دون أخطاء.
+# - الوحدات: L[km], W[m], h[m], rho_m[ton/m³], Pb/Pp/Pr[proportion], T[°C], A[million ESALs/year]
+
 # Example inputs
 L = 1.0  # km
 W = 3.5  # m

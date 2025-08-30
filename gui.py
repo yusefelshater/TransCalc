@@ -2,6 +2,8 @@
 GUI for Pavement Performance Model using customtkinter
 with interactive charts (matplotlib) in the Results tab.
 """
+# واجهة رسومية بثلاث تبويبات: Inputs (مدخلات), Results (نتائج+رسوم), Warnings (تنبيهات).
+# تتعامل مع المعاملات، تشغيل الموديل، عرض KPI، رسم مخططات تفاعلية، وتصدير JSON للنتائج.
 import customtkinter as ctk
 from tkinter import messagebox, filedialog
 from model import run_model
@@ -28,6 +30,7 @@ except Exception:
     MPLCURS_AVAILABLE = False
 
 # Unified color palette
+# مخطط ألوان موحّد لعرض التكلفة والعمر والتنبيهات لضمان اتساق بصري.
 PALETTE = {
     "costs": {
         "aggregate": "#58a6ff",
@@ -45,8 +48,10 @@ PALETTE = {
     "warn_text": "#ffd166",
 }
 
+# مسار ملف الإعدادات/المعايير `standards.json` الذي يحتوي على Presets (قيم افتراضية) وحدود مسموحة.
 STANDARDS_PATH = os.path.join(os.path.dirname(__file__), "standards.json")
 
+# التطبيق الرئيسي الذي يدير عناصر الواجهة والمنطق المرتبط بها.
 class PavementApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -98,7 +103,7 @@ class PavementApp(ctk.CTk):
         self.main_frame = ctk.CTkFrame(self, corner_radius=0)
         self.main_frame.pack(side="right", fill="both", expand=True)
         
-        # Create tabs
+        # Create tabs: تنظيم الواجهة في تبويبات لسهولة الاستخدام
         self.tabs = ctk.CTkTabview(self.main_frame)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
         
@@ -117,7 +122,7 @@ class PavementApp(ctk.CTk):
         self.warnings_text.configure(state="disabled")
         
         # Schedule intro playback, then show the main window
-        self.after(100, self.play_intro_then_show)
+        self.after(100, self.play_intro_then_show)  # عرض الانترو أولاً ثم إظهار النافذة
 
     # ---------------------- Intro Playback ----------------------
     def app_dir(self) -> str:
@@ -195,6 +200,10 @@ class PavementApp(ctk.CTk):
         """Play intro using default player; wait its duration, then show GUI.
         Prefer ffplay if available because it blocks until finish.
         """
+        # المنطق:
+        # 1) إخفاء النافذة
+        # 2) محاولة تشغيل الفيديو عبر ffplay (أفضلية) أو VLC أو طلب اختيار تنفيذي
+        # 3) بعد الانتهاء/الفشل -> إظهار الواجهة بأمان
         # Hide GUI while intro is playing
         try:
             self.withdraw()
@@ -324,6 +333,7 @@ class PavementApp(ctk.CTk):
         
     def create_inputs(self, tab):
         """Create input fields in the inputs tab"""
+        # كل مُدخل له تسمية وقيمة افتراضية. يمكن قفل الحقول حتى اختيار Preset من standards.json.
         # Define input parameters
         self.params = {
             "L": {"label": "Road Length (km)", "default": "1.0"},
@@ -369,6 +379,7 @@ class PavementApp(ctk.CTk):
     
     def create_results(self, tab):
         """Create results display and plots in the results tab"""
+        # يحوي: نص النتائج، بطاقات KPI (إجمالي/متر مربع/العمر)، ومخططات (إن توفّر matplotlib).
         # Numeric results area
         self.results_text = ctk.CTkTextbox(tab, wrap="word", height=130)
         self.results_text.pack(fill="x", padx=10, pady=(10, 0))
@@ -419,6 +430,9 @@ class PavementApp(ctk.CTk):
         
     def run_model(self):
         """Run the model with input parameters"""
+        # 1) قراءة المدخلات من الحقول
+        # 2) استدعاء run_model من model.py مع معاملات المعايير الحالية
+        # 3) تحديث النتائج والتنبيهات والرسوم وفتح زر التصدير
         # Collect input values
         input_values = {}
         for key, entry in self.entries.items():
@@ -457,6 +471,7 @@ class PavementApp(ctk.CTk):
             return {"presets": {}, "ui": {"lock_inputs_until_preset_selected": False}}
 
     def apply_preset(self, code: str):
+        # يملأ المدخلات بالقيم الافتراضية، ويضبط معاملات الحساب وحدود السماح حسب الـ preset المختار.
         presets = self.standards.get("presets", {})
         preset = presets.get(code)
         if not preset:
@@ -530,6 +545,7 @@ class PavementApp(ctk.CTk):
         }
 
     def export_run(self):
+        # يُصدّر آخر تشغيل بصيغة JSON داخل مجلد runs/ باسم مؤرّخ. يشمل: المُدخلات، coefficients الفعلية، النتائج، والتنبيهات.
         if not self.last_results:
             messagebox.showinfo("Export", "No run to export yet.")
             return
@@ -599,6 +615,10 @@ class PavementApp(ctk.CTk):
 
     def update_plots(self, results: dict):
         """Update interactive charts based on results."""
+        # يرسم:
+        # - عموديات لتفصيل التكاليف
+        # - عموديات لأعمار الكلل/التخدد/العمر التصميمي
+        # ويفعّل tooltips باستخدام mplcursors إن كانت متاحة.
         if not MATPLOT_AVAILABLE:
             return
 

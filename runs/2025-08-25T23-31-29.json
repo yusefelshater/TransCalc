@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "timestamp": "2025-08-25T23-31-29",
+  "standard_used": "american",
+  "inputs": {
+    "road_length_km": 100.0,
+    "road_width_m": 5.0,
+    "layer_thickness_m": 0.05,
+    "mixture_density_ton_per_m3": 2.4,
+    "bitumen_content_prop": 0.05,
+    "plastic_of_bitumen_prop": 0.04,
+    "rubber_of_bitumen_prop": 0.08,
+    "temperature_C": 30.0,
+    "annual_ESALs_million": 1.0,
+    "aggregate_cost_per_ton": 110.0,
+    "bitumen_cost_per_ton": 600.0,
+    "plastic_cost_per_ton": 250.0,
+    "rubber_cost_per_ton": 350.0,
+    "overhead_cost": 1500.0,
+    "target_design_life_years": 15.0
+  },
+  "coefficients_effective": {
+    "E0_MPa": 4000.0,
+    "k_temp": 0.03,
+    "T0_C": 25.0,
+    "p_plastic": 1.8,
+    "r_rubber": 0.8,
+    "k_eps_t": 0.028,
+    "k_eps_c": 0.005,
+    "m_f": 4.0,
+    "m_r": 4.0,
+    "MIN_E": 500.0,
+    "MAX_E": 15000.0
+  },
+  "results": {
+    "volume_m3": 25000.0,
+    "total_mass_ton": 60000.0,
+    "modulus_MPa": 3468.7178598784285,
+    "tensile_strain": 0.00016144293731045246,
+    "compressive_strain": 1.4414547974147543e-06,
+    "fatigue_life_years": 15.000000000000004,
+    "rutting_life_years": 15.0,
+    "design_life_years": 15.0,
+    "material_cost": 7968000.0,
+    "total_cost": 7969500.0,
+    "costs": {
+      "aggregate": 6270000.0,
+      "bitumen": 1584000.0,
+      "plastic": 30000.0,
+      "rubber": 84000.0,
+      "overhead": 1500.0
+    },
+    "cost_per_m2": 15.939,
+    "cost_per_ton": 132.825
+  },
+  "warnings": []
+}

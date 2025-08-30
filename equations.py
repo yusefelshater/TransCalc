@@ -3,6 +3,12 @@ Core equations for the pavement performance model
 """
 import math
 
+# Arabic/English notes:
+# - يحتوي هذا الملف على صيغ حسابية أساسية: حجم/كتلة، معاملات حرارة، إجهادات، سعات، أعمار، وتكاليف.
+# - الوحدات:
+#   L[km], W[m], h[m], V[m³], rho_m[ton/m³], Mass[ton], E[MPa], T[°C]
+# - تركنا الدوال بسيطة وواضحة مع توثيق مختصر. بعض الصيغ البديلة (legacy) ما زالت موجودة للتوافق.
+
 # Volume and mass calculations
 def calculate_volume(L_km: float, W_m: float, h_m: float) -> float:
     """Calculate pavement volume in cubic meters"""
@@ -14,7 +20,9 @@ def calculate_mass(V_m3: float, rho_m: float) -> float:
 
 def calculate_binder_masses(M: float, Pb: float, Pp: float, Pr: float) -> tuple:
     """Calculate masses of components"""
+    # M_b: كتلة البيتومين الكلّية قبل الاستبدال
     M_b = M * Pb
+    # البلاستيك والمطاط كنِسَب من كتلة البيتومين (وليس من إجمالي الخلطة)
     M_p = M_b * Pp
     M_r = M_b * Pr
     M_agg = M - M_b
@@ -48,6 +56,8 @@ def temp_factor(T: float, k_temp: float, T0: float) -> float:
 # Modulus calculation
 def calculate_modulus(E0: float, p: float, r: float, Pp: float, Pr: float, fT: float) -> float:
     """Calculate effective modulus"""
+    # Legacy/بديل مبسّط: كان يستخدم (1 + p*Pp - r*Pr) مضروباً في fT.
+    # في model.py نستخدم صيغة "آمنة" حيث معدِّلات البلاستيك/المطاط تؤثر كنِسَب على الموثِّق.
     return E0 * (1 + p * Pp - r * Pr) * fT
 
 # Strain calculations
@@ -71,6 +81,7 @@ def compressive_strain(k_epsilon_c: float, E: float) -> float:
 # Capacities calculations
 def capacities(et: float, ec: float, kf: float, mf: float, kr: float, mr: float) -> dict:
     """Calculate fatigue and rutting capacities"""
+    # Nf/Nr بالسعات (ملايين المحاور المكافئة) حسب علاقات القوى العكسية مع الإجهادات
     Nf = kf * (1/et) ** mf
     Nr = kr * (1/ec) ** mr
     return {'Nf': Nf, 'Nr': Nr}
@@ -78,6 +89,7 @@ def capacities(et: float, ec: float, kf: float, mf: float, kr: float, mr: float)
 # Life in years
 def life_years(Nf: float, Nr: float, A_million: float) -> dict:
     """Convert load repetitions to life in years"""
+    # تحويل السعات إلى سنوات بناءً على A (ملايين المحاور سنوياً)
     life_f = Nf / A_million
     life_r = Nr / A_million
     life = min(life_f, life_r)
@@ -114,6 +126,7 @@ def cost_plastic(M_pl: float, c_pl: float) -> float:
 
 def cost_plastik(M_pl: float, c_pl: float) -> float:
     """Alias to handle legacy spelling"""
+    # متوافق مع هجاء قديم لكلمة plastic
     return cost_plastic(M_pl, c_pl)
 
 def cost_rubber(M_rub: float, c_rub: float) -> float:
@@ -128,6 +141,8 @@ def cost(M_agg: float, M_bit_new: float, M_p: float, M_r: float,
          c_agg: float, c_bit: float, c_pl: float, c_rub: float,
          overhead: float = 0.0) -> dict:
     """Calculate material and total costs"""
+    # ملاحظة: هنا نمرّر إلى cost_bitumen الكتلة الأصلية للبيتومين (قبل الطرح)
+    # بحيث تقوم الدالة بطرح M_pl و M_rub مرّة واحدة فقط.
     material_cost = cost_aggregate(M_agg, c_agg) + cost_bitumen(M_bit_new + M_p + M_r, M_p, M_r, c_bit) + cost_plastic(M_p, c_pl) + cost_rubber(M_r, c_rub)
     total_cost = material_cost + overhead
     return {'material_cost': material_cost, 'total_cost': total_cost}

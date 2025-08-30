@@ -1,12 +1,20 @@
-import os
+\import os
 import sys
 import argparse
 from typing import Tuple, Optional, List
+
+# الغرض: سكربت لصناعة فيديو انترو بسيط (~16 ثانية) باستخدام MoviePy و PIL، مع دعم نص عربي اختياري.
+# Purpose: Build a simple intro video (~16s) with fades, glows, optional audio, and logos.
+# الاستخدام المختصر:
+#   python intro_video.py --out runs/intro.mp4 --music intro_music.mp3 --w 1920 --h 1080 --fps 30
+# المتطلبات: MoviePy, Pillow, NumPy, (اختياري) arabic-reshaper, python-bidi
+# المخرجات: MP4 (H.264) عبر FFmpeg بإعدادات جودة معقولة.
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # Text shaping for Arabic
+# (اختياري) إن فشل الاستيراد، سيستمر السكربت لكن بدون إعادة تشكيل/اتجاه النص العربي.
 try:
     import arabic_reshaper
     from bidi.algorithm import get_display
@@ -14,6 +22,7 @@ try:
 except Exception:
     HAS_ARABIC = False
 
+# أدوات الفيديو/الصوت من MoviePy
 from moviepy.editor import (
     ColorClip,
     ImageClip,
@@ -23,18 +32,22 @@ from moviepy.editor import (
     vfx,
 )
 
-
+# ============= أدوات مساعدة (Utilities) =============
 def hex_to_rgb(hx: str) -> Tuple[int, int, int]:
+    # تحويل لون سداسي إلى RGB
     hx = hx.lstrip('#')
     if len(hx) == 3:
         hx = ''.join([c * 2 for c in hx])
     return tuple(int(hx[i:i+2], 16) for i in (0, 2, 4))
 
-
 def find_font(candidates: List[str]) -> Optional[str]:
+    # محاولة العثور على ملف خط متوافق من مواقع شائعة على نظام ويندوز.
+    # Try to find a usable font file from common locations on Windows.
+    # Returns the first existing path or None.
     """Try to find a usable font file from common locations on Windows.
     Returns the first existing path or None.
     """
+    # نحاول البحث عن ملفات TTF المحتملة في مجلدات شائعة على ويندوز أو مجلد المشروع.
     search_dirs = [
         r"C:\\Windows\\Fonts",
         r"C:\\Windows\\fonts",
@@ -50,6 +63,7 @@ def find_font(candidates: List[str]) -> Optional[str]:
 
 def find_image(candidates: List[str]) -> Optional[str]:
     """Find an image by trying common locations and candidate names."""
+    # يبحث عن ملفات صور (شعارات) محتملة داخل المشروع أو مجلد assets.
     search_dirs = [
         os.getcwd(),
         os.path.join(os.getcwd(), "assets"),
@@ -82,6 +96,7 @@ def render_text_image(
     padding: int = 10,
 ) -> Image.Image:
     """Render text to a transparent RGBA image tightly fit around the text."""
+    # يُعيد رسم النص (مع دعم عربي عند توافر الحزم) على صورة RGBA شفافة جاهزة للتركيب على الفيديو.
     txt = shape_text_if_arabic(text)
     font = ImageFont.truetype(font_path, font_size)
 
@@ -99,6 +114,7 @@ def render_text_image(
 
 
 def image_to_clip(img: Image.Image, duration: float, fps: int) -> ImageClip:
+    # يحول صورة PIL إلى ImageClip (MoviePy) لمدة محددة وأطُر في الثانية.
     arr = np.array(img)
     clip = ImageClip(arr, ismask=False).set_duration(duration)
     clip.fps = fps
@@ -107,6 +123,7 @@ def image_to_clip(img: Image.Image, duration: float, fps: int) -> ImageClip:
 
 def glow_for_image(img: Image.Image, radius: int = 12, strength: float = 0.6, scale: float = 1.02) -> Image.Image:
     """Create a soft glow from an RGBA text image by blurring and reducing alpha."""
+    # تأثير توهج بسيط: طمس الصورة ثم تخفيض الألفا، مع تكبير اختياري لخلق هالة حول النص.
     blur = img.filter(ImageFilter.GaussianBlur(radius))
     r, g, b, a = blur.split()
     a = a.point(lambda v: int(v * strength))
@@ -120,6 +137,7 @@ def glow_for_image(img: Image.Image, radius: int = 12, strength: float = 0.6, sc
 
 def make_radial_glow_overlay(width: int, height: int, color: Tuple[int, int, int], strength: float = 0.6, power: float = 2.0) -> Image.Image:
     """Create a colored radial glow RGBA image (center bright -> edges fade)."""
+    # يصنع قناع توهج دائري ملوّن بخريطة ألفا تعتمد على المسافة من المركز.
     yy, xx = np.mgrid[0:height, 0:width]
     cx, cy = width / 2.0, height / 2.0
     rx, ry = width / 2.0, height / 2.0
@@ -136,6 +154,7 @@ def make_radial_glow_overlay(width: int, height: int, color: Tuple[int, int, int
 
 def create_vignette_clip(w: int, h: int, duration: float, strength: float = 0.35, power: float = 2.0, fps: int = 30) -> ImageClip:
     """Create a black vignette overlay as an ImageClip with alpha gradient."""
+    # طبقة تظليل حواف سوداء (Vignette) تُضاف فوق الكل لإحساس سينمائي بسيط.
     yy, xx = np.mgrid[0:h, 0:w]
     cx, cy = w / 2.0, h / 2.0
     rx, ry = w / 2.0, h / 2.0
@@ -151,6 +170,7 @@ def create_vignette_clip(w: int, h: int, duration: float, strength: float = 0.35
 
 def make_noise_clip(w: int, h: int, duration: float, fps: int = 30, opacity: float = 0.04) -> VideoClip:
     """Create a subtle animated grain/noise overlay clip (downsampled for speed)."""
+    # ضجيج حُبيبي متحرك خفيف يُرّكب بعتامة منخفضة لإضافة إحساس فيلم.
     dw, dh = max(2, w // 2), max(2, h // 2)
 
     def _frame(t):
@@ -162,7 +182,8 @@ def make_noise_clip(w: int, h: int, duration: float, fps: int = 30, opacity: flo
     noise = VideoClip(make_frame=_frame, duration=duration).set_fps(fps)
     return noise.set_opacity(opacity)
 
-def build_intro(
+ # ============= التجميع الرئيسي (Timeline Assembly) =============
+ def build_intro(
     out_path: str,
     music_path: Optional[str] = None,
     w: int = 1920,
@@ -171,6 +192,15 @@ def build_intro(
     font_ar: Optional[str] = None,
     font_en: Optional[str] = None,
 ):
+    # يكوّن التسلسل الزمني 16 ثانية تقريبًا:
+    # 0–2s: خلفية سوداء
+    # 2–4s: شعار الجامعة (أو نص بديل) + توهج ذهبي
+    # 4–6s: نص الجامعة
+    # 6–8s: شعار الكلية (أو صورة/نص بديل) + توهج فضي
+    # 8–10s: نص الكلية
+    # 10–12s: شعار الفريق (أو نص بديل) + توهج أزرق
+    # 12–14s: نص الفريق
+    # 14–16s: تلاشي عام إلى الأسود
     duration_total = 16.0
 
     # Colors
@@ -197,7 +227,7 @@ def build_intro(
             'SegoeUI.ttf',
         ]) or 'arial.ttf'
 
-    # Background
+    # Background: خلفية سوداء ثابتة على مدى كل المدة
     bg = ColorClip(size=(w, h), color=(0, 0, 0), duration=duration_total).set_fps(fps)
 
     clips = [bg]
@@ -337,7 +367,7 @@ def build_intro(
     # Global fadeout for last 2 seconds (14–16s)
     final = final.fx(vfx.fadeout, 2.0)
 
-    # Audio (optional)
+    # Audio (optional): موسيقى اختيارية تُقص/تُمدد لتساوي المدة، مع تدرج دخول/خروج.
     if music_path and os.path.exists(music_path):
         try:
             audio = AudioFileClip(music_path).fx(lambda a: a)
@@ -356,6 +386,10 @@ def build_intro(
     os.makedirs(os.path.dirname(os.path.abspath(out_path)) or '.', exist_ok=True)
 
     print(f"[INFO] Rendering video to {out_path} ...")
+    # كتابة الفيديو عبر FFmpeg:
+    # - libx264 مع CRF=17 (جودة جيدة) وبروفايل high و yuv420p لضمان التوافق
+    # - audio AAC 192kbps
+    # - +faststart لنقل moov إلى البداية لتحسين تشغيل الويب
     final.write_videofile(
         out_path,
         fps=fps,
@@ -379,6 +413,7 @@ def build_intro(
 
 
 def parse_args(argv=None):
+    # CLI: يعرّف وسيطات سطر الأوامر للتحكم في الإخراج والأبعاد والخطوط والشعارات.
     p = argparse.ArgumentParser(description='Render a simple 20s intro video (black background, fading texts).')
     p.add_argument('--out', default='intro.mp4', help='Output video file path (mp4).')
     p.add_argument('--music', default=None, help='Optional music file (wav/mp3).')
@@ -395,6 +430,7 @@ def parse_args(argv=None):
 
 
 if __name__ == '__main__':
+    # Main: نقرأ الوسيطات، نخزن مسارات الشعارات في متغيرات عامة للوصول أثناء البناء، ثم نبني الانترو.
     args = parse_args()
     # Store CLI logo args in globals for build_intro resolution
     ARGS_LOGO_AZHAR = args.logo_azhar

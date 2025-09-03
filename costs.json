@@ -1,0 +1,48 @@
+{
+  "currency": "EGP",
+  "updated_at": "2025-09-02",
+  "aggregates_catalog": [
+    { "id": "coarse_s1",   "name": "زلط سن 1",  "density_ton_per_m3": 1.8, "price_per_ton": 189, "price_per_m3": 340 },
+    { "id": "coarse_s2",   "name": "زلط سن 2",  "density_ton_per_m3": 1.8, "price_per_ton": 167, "price_per_m3": 300 },
+    { "id": "special",     "name": "زلط مخصوص", "density_ton_per_m3": 1.8, "price_per_ton": 208, "price_per_m3": 375 },
+    { "id": "fino",        "name": "زلط فينو",  "density_ton_per_m3": 1.8, "price_per_ton": 233, "price_per_m3": 420 },
+    { "id": "sand_coarse", "name": "رمل حرش",   "density_ton_per_m3": 1.5, "price_per_ton": 90,  "price_per_m3": 135 },
+    { "id": "sand_fine",   "name": "رمل ناعم",  "density_ton_per_m3": 1.5, "price_per_ton": 80,  "price_per_m3": 120 }
+  ],
+  "bitumen": { "price_per_ton": 66925 },
+  "rubber":  { "price_per_ton": 12500 },
+  "overheads": {
+    "mode": "percent",
+    "components": [
+      { "id": "transport", "label": "نقل",     "percent_range": [0.08, 0.12], "per_ton_range": [400, 600], "default": { "percent": 0.10, "egp_per_ton": 500 } },
+      { "id": "waste",     "label": "هدر",     "percent_range": [0.03, 0.05], "per_ton_range": [150, 250], "default": { "percent": 0.04, "egp_per_ton": 200 } },
+      { "id": "salaries",  "label": "مرتبات",  "percent_range": [0.10, 0.15], "per_ton_range": [500, 750], "default": { "percent": 0.12, "egp_per_ton": 650 } },
+      { "id": "equip",     "label": "معدات",   "percent_range": [0.07, 0.10], "per_ton_range": [350, 500], "default": { "percent": 0.08, "egp_per_ton": 425 } },
+      { "id": "profit",    "label": "ربح",     "percent_range": [0.05, 0.08], "per_ton_range": [250, 400], "default": { "percent": 0.06, "egp_per_ton": 325 } }
+    ],
+    "total_percent_hint": [0.33, 0.50],
+    "total_per_ton_hint": [1650, 2500]
+  },
+  "mix_ranges": {
+    "bitumen_prop_of_mix": [0.04, 0.07],
+    "rubber_prop_of_bitumen": [0.01, 0.60],
+    "aggregates_breakdown": {
+      "coarse": [0.50, 0.60],
+      "medium": [0.20, 0.30],
+      "fine":   [0.15, 0.25]
+    }
+  },
+  "baseline": {
+    "project": { "length_km": 1.0, "width_m": 7.0, "thickness_m": 0.05, "density_ton_per_m3": 2.35 },
+    "mix": {
+      "bitumen_prop_of_mix": 0.055,
+      "rubber_prop_of_bitumen": 0.02,
+      "aggregates": {
+        "coarse": { "fraction_of_mix": 0.40, "type_id": "coarse_s1" },
+        "medium": { "fraction_of_mix": 0.30, "type_id": "coarse_s2" },
+        "fine":   { "fraction_of_mix": 0.20, "type_id": "sand_fine" }
+      }
+    },
+    "overheads": { "mode": "percent" }
+  }
+}
